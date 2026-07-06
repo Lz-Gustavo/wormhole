@@ -10,6 +10,10 @@ var _ db.DatabaseClient = &EtcdClient{}
 
 type EtcdClient struct{}
 
+func NewEtcdClient() db.DatabaseClient {
+	return &EtcdClient{}
+}
+
 func (ec *EtcdClient) Init() error {
 	// TODO
 	return nil
