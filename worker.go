@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"math/rand/v2"
+	"sync/atomic"
 	"time"
 
 	"github.com/Lz-Gustavo/wormhole/db"
@@ -20,6 +21,8 @@ const (
 type Worker struct {
 	client db.DatabaseClient
 	logger *log.Logger
+
+	count atomic.Int64
 }
 
 func NewWorker(cl db.DatabaseClient) *Worker {
@@ -42,6 +45,10 @@ func (w *Worker) Run(ctx context.Context) {
 	}
 }
 
+func (w *Worker) Count() int64 {
+	return w.count.Load()
+}
+
 func (w *Worker) work(ctx context.Context) {
 	ctx, cancel := context.WithTimeout(ctx, defaultCommandTimeout)
 	defer cancel()
@@ -52,6 +59,7 @@ func (w *Worker) work(ctx context.Context) {
 	if err := w.client.Write(ctx, key, value); err != nil {
 		w.logger.Println("failed write request: %w", err)
 	}
+	w.count.Add(1)
 }
 
 func (w *Worker) getRandThinkingTime() time.Duration {

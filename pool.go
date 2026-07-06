@@ -9,7 +9,8 @@ import (
 )
 
 type Pool struct {
-	size int
+	size    int
+	workers []*Worker
 
 	wg     *sync.WaitGroup
 	cancel context.CancelFunc
@@ -17,8 +18,9 @@ type Pool struct {
 
 func NewPool(size int) *Pool {
 	return &Pool{
-		size: size,
-		wg:   &sync.WaitGroup{},
+		size:    size,
+		workers: make([]*Worker, size),
+		wg:      &sync.WaitGroup{},
 	}
 }
 
@@ -28,15 +30,24 @@ func (p *Pool) Run(ctx context.Context, newClient func() db.DatabaseClient, dur 
 	p.cancel = cancel
 	go p.shutdownAfterDur(dur)
 
-	for range p.size {
+	for i := range p.size {
 		cl := newClient()
 		w := NewWorker(cl)
+		p.workers[i] = w
 
 		p.wg.Go(func() {
 			w.Run(ctx)
 		})
 	}
 	p.wg.Wait()
+}
+
+func (p *Pool) Count() int64 {
+	var n int64
+	for _, w := range p.workers {
+		n += w.Count()
+	}
+	return n
 }
 
 func (p *Pool) shutdownAfterDur(dur time.Duration) {

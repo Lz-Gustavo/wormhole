@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/Lz-Gustavo/wormhole/db/etcd"
@@ -17,4 +18,5 @@ func main() {
 	p := NewPool(defaultSize)
 
 	p.Run(ctx, etcd.NewEtcdClient, defaultDuration)
+	fmt.Println("executed:", p.Count())
 }
