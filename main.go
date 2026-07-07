@@ -3,20 +3,16 @@ package main
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/Lz-Gustavo/wormhole/db/etcd"
-)
-
-const (
-	defaultSize     = 10
-	defaultDuration = 5 * time.Second
+	"github.com/Lz-Gustavo/wormhole/flags"
 )
 
 func main() {
+	f := flags.ParseFlagsFromArgs()
 	ctx := context.Background()
-	p := NewPool(defaultSize)
 
-	p.Run(ctx, etcd.NewEtcdClient, defaultDuration)
+	p := NewPool(f.NumClients)
+	p.Run(ctx, etcd.NewEtcdClient, f.ExecTime)
 	fmt.Println("executed:", p.Count())
 }
