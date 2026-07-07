@@ -33,6 +33,9 @@ func (w *Worker) Run(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
+			if err := w.client.Close(); err != nil {
+				w.logger.Error("failed closing database client", "err", err)
+			}
 			w.logger.Debug("worker finished")
 			return
 
@@ -48,14 +51,14 @@ func (w *Worker) Count() int64 {
 }
 
 func (w *Worker) work(ctx context.Context) {
-	ctx, cancel := context.WithTimeout(ctx, w.prop.CmdTimeout)
-	defer cancel()
-
 	key := db.GetRandKeyUpTo(w.prop.KeySpaceSize)
 	value := db.GetPayloadBySizeKb(db.PayloadSize(w.prop.PayloadSize))
 
+	ctx, cancel := context.WithTimeout(ctx, w.prop.CmdTimeout)
+	defer cancel()
+
 	if err := w.client.Write(ctx, key, value); err != nil {
-		w.logger.Error("failed write request", "err", err)
+		w.logger.Error("failed on write request", "err", err)
 	}
 	w.count.Add(1)
 }

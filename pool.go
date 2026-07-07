@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"log/slog"
 	"sync"
 	"time"
 
@@ -13,6 +14,7 @@ type Pool struct {
 	size    int
 	prop    flags.Flags
 	workers []*Worker
+	logger  *slog.Logger
 
 	wg     *sync.WaitGroup
 	cancel context.CancelFunc
@@ -23,18 +25,24 @@ func NewPool(prop flags.Flags) *Pool {
 		size:    prop.NumClients,
 		prop:    prop,
 		workers: make([]*Worker, prop.NumClients),
+		logger:  slog.Default(),
 		wg:      &sync.WaitGroup{},
 	}
 }
 
 // Run ...
-func (p *Pool) Run(ctx context.Context, newClient func() db.DatabaseClient) {
+func (p *Pool) Run(ctx context.Context, newClient db.DatabaseFn) {
 	ctx, cancel := context.WithCancel(ctx)
 	p.cancel = cancel
 	go p.shutdownAfterDur(p.prop.ExecTime)
 
 	for i := range p.size {
-		cl := newClient()
+		cl, err := newClient(p.prop)
+		if err != nil {
+			p.logger.Error("failed initializing database client", "err", err)
+			return
+		}
+
 		w := NewWorker(cl, p.prop)
 		p.workers[i] = w
 
@@ -57,5 +65,6 @@ func (p *Pool) shutdownAfterDur(dur time.Duration) {
 	t := time.NewTimer(dur)
 	<-t.C
 
+	p.logger.Debug("shutting down workers...")
 	p.cancel()
 }

@@ -1,10 +1,16 @@
 package db
 
-import "context"
+import (
+	"context"
+
+	"github.com/Lz-Gustavo/wormhole/flags"
+)
+
+// DatabaseFn ...
+type DatabaseFn func(flags.Flags) (DatabaseClient, error)
 
 // DatabaseClient ...
 type DatabaseClient interface {
-	Init() error
 	Write(ctx context.Context, key, value []byte) error
 	Close() error
 }
