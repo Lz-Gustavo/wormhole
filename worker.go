@@ -2,40 +2,38 @@ package main
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"math/rand/v2"
 	"sync/atomic"
 	"time"
 
 	"github.com/Lz-Gustavo/wormhole/db"
-)
-
-const (
-	defaultCommandTimeout    = 5 * time.Second
-	defaultMaxThinkingTimeMs = 500
-
-	defaultKeySpaceSize  = 10000
-	defaultPayloadSizeKb = 4
+	"github.com/Lz-Gustavo/wormhole/flags"
 )
 
 type Worker struct {
 	client db.DatabaseClient
-	logger *log.Logger
+	prop   flags.Flags
+	logger *slog.Logger
 
 	count atomic.Int64
 }
 
-func NewWorker(cl db.DatabaseClient) *Worker {
+func NewWorker(cl db.DatabaseClient, prop flags.Flags) *Worker {
 	return &Worker{
-		logger: log.Default(),
+		prop:   prop,
+		logger: slog.Default(),
 		client: cl,
 	}
 }
 
 func (w *Worker) Run(ctx context.Context) {
+	w.logger.Debug("worker started...")
+
 	for {
 		select {
 		case <-ctx.Done():
+			w.logger.Debug("worker finished")
 			return
 
 		default:
@@ -50,19 +48,19 @@ func (w *Worker) Count() int64 {
 }
 
 func (w *Worker) work(ctx context.Context) {
-	ctx, cancel := context.WithTimeout(ctx, defaultCommandTimeout)
+	ctx, cancel := context.WithTimeout(ctx, w.prop.CmdTimeout)
 	defer cancel()
 
-	key := db.GetRandKeyUpTo(defaultKeySpaceSize)
-	value := db.GetPayloadBySizeKb(defaultPayloadSizeKb)
+	key := db.GetRandKeyUpTo(w.prop.KeySpaceSize)
+	value := db.GetPayloadBySizeKb(db.PayloadSize(w.prop.PayloadSize))
 
 	if err := w.client.Write(ctx, key, value); err != nil {
-		w.logger.Println("failed write request: %w", err)
+		w.logger.Error("failed write request", "err", err)
 	}
 	w.count.Add(1)
 }
 
 func (w *Worker) getRandThinkingTime() time.Duration {
-	ms := rand.IntN(defaultMaxThinkingTimeMs)
+	ms := rand.IntN(w.prop.MaxThinkingTimeMs)
 	return time.Duration(ms) * time.Millisecond
 }

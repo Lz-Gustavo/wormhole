@@ -23,7 +23,7 @@ Open loop benchmark tool, inspired by [YCSB Is Obsolete, We Need New Benchmarks]
 
 * [ ] Measurements pkg
 
-* [ ] Log level and outputs
+* [x] Log level and outputs
 
 * [ ] Utils and tests
 

@@ -6,33 +6,36 @@ import (
 	"time"
 
 	"github.com/Lz-Gustavo/wormhole/db"
+	"github.com/Lz-Gustavo/wormhole/flags"
 )
 
 type Pool struct {
 	size    int
+	prop    flags.Flags
 	workers []*Worker
 
 	wg     *sync.WaitGroup
 	cancel context.CancelFunc
 }
 
-func NewPool(size int) *Pool {
+func NewPool(prop flags.Flags) *Pool {
 	return &Pool{
-		size:    size,
-		workers: make([]*Worker, size),
+		size:    prop.NumClients,
+		prop:    prop,
+		workers: make([]*Worker, prop.NumClients),
 		wg:      &sync.WaitGroup{},
 	}
 }
 
 // Run ...
-func (p *Pool) Run(ctx context.Context, newClient func() db.DatabaseClient, dur time.Duration) {
+func (p *Pool) Run(ctx context.Context, newClient func() db.DatabaseClient) {
 	ctx, cancel := context.WithCancel(ctx)
 	p.cancel = cancel
-	go p.shutdownAfterDur(dur)
+	go p.shutdownAfterDur(p.prop.ExecTime)
 
 	for i := range p.size {
 		cl := newClient()
-		w := NewWorker(cl)
+		w := NewWorker(cl, p.prop)
 		p.workers[i] = w
 
 		p.wg.Go(func() {
