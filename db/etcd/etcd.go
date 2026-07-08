@@ -56,18 +56,18 @@ func NewEtcdClient(prop flags.Flags) (db.DatabaseClient, error) {
 	return ec, nil
 }
 
-func (ec *EtcdClient) Write(ctx context.Context, key, value []byte) error {
+func (ec *EtcdClient) Write(ctx context.Context, key, value string) error {
 	var err error
 
 	if ec.isLatencyMsrEnabled && mustMeasureLat() {
 		start := time.Now()
-		_, err = ec.client.Put(ctx, string(key), string(value))
+		_, err = ec.client.Put(ctx, key, value)
 		if errL := ec.latMsr.Record(time.Since(start)); errL != nil {
 			return errL
 		}
 
 	} else {
-		_, err = ec.client.Put(ctx, string(key), string(value))
+		_, err = ec.client.Put(ctx, key, value)
 	}
 
 	if ec.isStatusMsrEnabled {

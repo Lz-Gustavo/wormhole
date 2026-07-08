@@ -11,6 +11,6 @@ type DatabaseFn func(flags.Flags) (DatabaseClient, error)
 
 // DatabaseClient ...
 type DatabaseClient interface {
-	Write(ctx context.Context, key, value []byte) error
+	Write(ctx context.Context, key, value string) error
 	Close() error
 }

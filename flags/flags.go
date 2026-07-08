@@ -23,7 +23,7 @@ type Flags struct {
 	CmdTimeout time.Duration
 
 	MaxThinkingTimeMs int
-	KeySpaceSize      int
+	KeySpaceSize      int64
 	PayloadSize       int
 
 	LatencyMsrFilename string
@@ -38,7 +38,7 @@ func ParseFlagsFromArgs() Flags {
 	flag.DurationVar(&f.ExecTime, "exec-time", defaultExecTime, "total execution time (duration)")
 	flag.DurationVar(&f.CmdTimeout, "cmd-timeout", defaultCmdTimeout, "command timeout (duration)")
 	flag.IntVar(&f.MaxThinkingTimeMs, "max-thinking-time", defaultMaxThinkingTime, "maximum thinking time to wait between requests, in milliseconds (int)")
-	flag.IntVar(&f.KeySpaceSize, "key-space", defaultKeySpaceSize, "number of different keys (int)")
+	flag.Int64Var(&f.KeySpaceSize, "key-space", defaultKeySpaceSize, "number of different keys (int64)")
 	flag.IntVar(&f.PayloadSize, "payload-size", defaultPayloadSize, "payload size of values, in Bytes (int: 256, 512, 1024, 4096)")
 	flag.StringVar(&f.LatencyMsrFilename, "latency-filename", "", "filename to write latency measurement, empty is disabled (string)")
 	flag.StringVar(&f.StatusMsrFilename, "status-filename", "", "filename to write response status measurement, empty is disabled (string)")
