@@ -38,19 +38,22 @@ type EtcdClient struct {
 
 func NewEtcdClient(prop flags.Flags) (db.DatabaseClient, error) {
 	cl, err := clientv3.New(clientv3.Config{
-		Endpoints:   []string{"TODO"},
+		Endpoints:   prop.EtcdHosts,
 		DialTimeout: etcdDialTimeout,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO: initialize measurement from flags and define etcd hostname
-
-	return &EtcdClient{
+	ec := &EtcdClient{
 		client: cl,
 		prop:   prop,
-	}, nil
+	}
+
+	if err := ec.initializeMsrFromProp(); err != nil {
+		return nil, err
+	}
+	return ec, nil
 }
 
 func (ec *EtcdClient) Write(ctx context.Context, key, value []byte) error {
@@ -92,6 +95,27 @@ func (ec *EtcdClient) Close() error {
 		}
 	}
 	return ec.client.Close()
+}
+
+func (ec *EtcdClient) initializeMsrFromProp() error {
+	if ec.prop.LatencyMsrFilename != "" {
+		lm, err := measure.NewLatencyMsr(ec.prop.LatencyMsrFilename)
+		if err != nil {
+			return err
+		}
+		ec.isLatencyMsrEnabled = true
+		ec.latMsr = lm
+	}
+
+	if ec.prop.StatusMsrFilename != "" {
+		sm, err := measure.NewStatusMsr(ec.prop.StatusMsrFilename)
+		if err != nil {
+			return err
+		}
+		ec.isStatusMsrEnabled = true
+		ec.statusMsr = sm
+	}
+	return nil
 }
 
 func mustMeasureLat() bool {

@@ -2,6 +2,7 @@ package flags
 
 import (
 	"flag"
+	"strings"
 	"time"
 )
 
@@ -24,6 +25,10 @@ type Flags struct {
 	MaxThinkingTimeMs int
 	KeySpaceSize      int
 	PayloadSize       int
+
+	LatencyMsrFilename string
+	StatusMsrFilename  string
+	EtcdHosts          []string
 }
 
 func ParseFlagsFromArgs() Flags {
@@ -34,8 +39,14 @@ func ParseFlagsFromArgs() Flags {
 	flag.DurationVar(&f.CmdTimeout, "cmd-timeout", defaultCmdTimeout, "command timeout (duration)")
 	flag.IntVar(&f.MaxThinkingTimeMs, "max-thinking-time", defaultMaxThinkingTime, "maximum thinking time to wait between requests, in milliseconds (int)")
 	flag.IntVar(&f.KeySpaceSize, "key-space", defaultKeySpaceSize, "number of different keys (int)")
-	flag.IntVar(&f.PayloadSize, "payload-size", defaultPayloadSize, "payload size of values, in Bytes (int)")
-
+	flag.IntVar(&f.PayloadSize, "payload-size", defaultPayloadSize, "payload size of values, in Bytes (int: 256, 512, 1024, 4096)")
+	flag.StringVar(&f.LatencyMsrFilename, "latency-filename", "", "filename to write latency measurement, empty is disabled (string)")
+	flag.StringVar(&f.StatusMsrFilename, "status-filename", "", "filename to write response status measurement, empty is disabled (string)")
+	etcdHosts := flag.String("etcd-hosts", "", "list of etcd hostnames to send request, separated by `,` (string)")
 	flag.Parse()
+
+	if etcdHosts != nil {
+		f.EtcdHosts = strings.Split(*etcdHosts, ",")
+	}
 	return f
 }
