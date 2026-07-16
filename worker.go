@@ -11,6 +11,7 @@ import (
 	"github.com/Lz-Gustavo/wormhole/flags"
 )
 
+// Worker owns a database client and tracks its request count.
 type Worker struct {
 	client db.DatabaseClient
 	prop   flags.Flags
@@ -19,6 +20,7 @@ type Worker struct {
 	count atomic.Int64
 }
 
+// NewWorker instantiates a Worker with the provided client and configuration.
 func NewWorker(cl db.DatabaseClient, prop flags.Flags) *Worker {
 	return &Worker{
 		prop:   prop,
@@ -27,6 +29,8 @@ func NewWorker(cl db.DatabaseClient, prop flags.Flags) *Worker {
 	}
 }
 
+// Run implements an open-loop iteration, where every request is assigned to background goroutine
+// and a new one is issued every random thinking time.
 func (w *Worker) Run(ctx context.Context) {
 	w.logger.Debug("worker started...")
 
@@ -46,6 +50,7 @@ func (w *Worker) Run(ctx context.Context) {
 	}
 }
 
+// Count returns the number of completed requests by the worker.
 func (w *Worker) Count() int64 {
 	return w.count.Load()
 }

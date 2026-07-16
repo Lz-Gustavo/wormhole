@@ -21,7 +21,7 @@ const (
 
 var (
 	_ db.DatabaseClient = &EtcdClient{}
-	_ db.DatabaseFn     = NewEtcdClient
+	_ db.NewDatabaseFn  = NewEtcdClient
 )
 
 type EtcdClient struct {

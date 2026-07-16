@@ -29,7 +29,7 @@ func (ps PayloadSize) IsValid() bool {
 	return exists
 }
 
-// GetPayloadBySizeKb ...
+// GetPayloadBySizeKb returns a zero-filled payload of the requested size, or an empty string for invalid sizes.
 func GetPayloadBySizeKb(size PayloadSize) string {
 	if !size.IsValid() {
 		return ""
@@ -37,7 +37,7 @@ func GetPayloadBySizeKb(size PayloadSize) string {
 	return strings.Repeat("0", int(size))
 }
 
-// GetRandKeyUpTo ...
+// GetRandKeyUpTo returns a left-padded decimal key in the range [1, limit].
 func GetRandKeyUpTo(limit int64) string {
 	key := rand.Int64N(limit) + 1
 	skey := strconv.FormatInt(key, 10)

@@ -10,6 +10,8 @@ import (
 	"github.com/Lz-Gustavo/wormhole/flags"
 )
 
+// Pool coordinates workers lifecycle, starts one database client per worker, and gracefully
+// stops them after the configured execution time.
 type Pool struct {
 	size    int
 	prop    flags.Flags
@@ -20,6 +22,7 @@ type Pool struct {
 	cancel context.CancelFunc
 }
 
+// NewPool builds a Pool with the requested number of clients and a default logger.
 func NewPool(prop flags.Flags) *Pool {
 	return &Pool{
 		size:    prop.NumClients,
@@ -30,8 +33,8 @@ func NewPool(prop flags.Flags) *Pool {
 	}
 }
 
-// Run ...
-func (p *Pool) Run(ctx context.Context, newClient db.DatabaseFn) {
+// Run creates the database clients, starts each worker, and cancels them after ExecTime.
+func (p *Pool) Run(ctx context.Context, newClient db.NewDatabaseFn) {
 	ctx, cancel := context.WithCancel(ctx)
 	p.cancel = cancel
 	go p.shutdownAfterDur(p.prop.ExecTime)
@@ -53,6 +56,7 @@ func (p *Pool) Run(ctx context.Context, newClient db.DatabaseFn) {
 	p.wg.Wait()
 }
 
+// Count returns the total number of successful requests reported by all workers.
 func (p *Pool) Count() int64 {
 	var n int64
 	for _, w := range p.workers {

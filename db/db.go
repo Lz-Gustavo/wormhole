@@ -6,10 +6,10 @@ import (
 	"github.com/Lz-Gustavo/wormhole/flags"
 )
 
-// DatabaseFn ...
-type DatabaseFn func(flags.Flags) (DatabaseClient, error)
+// NewDatabaseFn is a common signature for database constructors to be later switched at runtime.
+type NewDatabaseFn func(flags.Flags) (DatabaseClient, error)
 
-// DatabaseClient ...
+// DatabaseClient defines the database interface utilized by workers.
 type DatabaseClient interface {
 	Write(ctx context.Context, key, value string) error
 	Close() error

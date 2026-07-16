@@ -32,6 +32,6 @@ Open loop benchmark tool, inspired by [YCSB Is Obsolete, We Need New Benchmarks]
 
 * [x] Etcd integration
 
-* [ ] Docs
+* [x] Docs
 
 * [ ] Generic DB initialization (v2)
