@@ -28,7 +28,7 @@ Open loop benchmark tool, inspired by [YCSB Is Obsolete, We Need New Benchmarks]
 
 * [x] Log level and outputs
 
-* [ ] Utils and tests
+* [x] Utils and tests
 
 * [x] Etcd integration
 

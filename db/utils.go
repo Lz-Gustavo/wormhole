@@ -1,9 +1,15 @@
 package db
 
+import (
+	"math/rand/v2"
+	"strconv"
+	"strings"
+)
+
 type PayloadSize int
 
 const (
-	keySizeBytes = 64
+	KeySizeBytes = 64
 
 	Small  PayloadSize = 1 << 8
 	Medium PayloadSize = 1 << 9
@@ -23,13 +29,19 @@ func (ps PayloadSize) IsValid() bool {
 	return exists
 }
 
+// GetPayloadBySizeKb ...
 func GetPayloadBySizeKb(size PayloadSize) string {
-	// TODO: generate payload of requested size (already validated)
-	return ""
+	if !size.IsValid() {
+		return ""
+	}
+	return strings.Repeat("0", int(size))
 }
 
+// GetRandKeyUpTo ...
 func GetRandKeyUpTo(limit int64) string {
-	// TODO: generate a rand integer, from 1 up to limit and return string representation
-	// from a []byte of 64B
-	return ""
+	key := rand.Int64N(limit) + 1
+	skey := strconv.FormatInt(key, 10)
+	paddingLen := KeySizeBytes - len(skey)
+
+	return strings.Repeat("0", paddingLen) + skey
 }
