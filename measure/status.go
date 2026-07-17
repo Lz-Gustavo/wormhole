@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sync"
 	"sync/atomic"
 	"time"
 )
@@ -23,6 +24,7 @@ type StatusMsr struct {
 	countTimeout atomic.Uint32
 	countFail    atomic.Uint32
 
+	mu   sync.Mutex
 	buff *bytes.Buffer
 	file *os.File
 }
@@ -65,15 +67,21 @@ func (sm *StatusMsr) Run(ctx context.Context) {
 			countT := sm.countTimeout.Swap(0)
 			countF := sm.countFail.Swap(0)
 
+			sm.mu.Lock()
 			if _, err := fmt.Fprintf(sm.buff, statusFmt, countS, countT, countF); err != nil {
+				sm.mu.Unlock()
 				log.Fatalln("failed writing status measurement, err:", err.Error())
 				return
 			}
+			sm.mu.Unlock()
 		}
 	}
 }
 
 func (sm *StatusMsr) Flush() error {
+	sm.mu.Lock()
+	defer sm.mu.Unlock()
+
 	if _, err := sm.buff.WriteTo(sm.file); err != nil {
 		return err
 	}
@@ -85,5 +93,6 @@ func (sm *StatusMsr) Flush() error {
 }
 
 func (sm *StatusMsr) Close() error {
+	sm.tick.Stop()
 	return sm.file.Close()
 }

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"sync"
 	"time"
 )
 
@@ -14,6 +15,7 @@ const (
 )
 
 type LatencyMsr struct {
+	mu   sync.Mutex
 	buff *bytes.Buffer
 	file *os.File
 }
@@ -33,11 +35,17 @@ func NewLatencyMsr(filename string) (*LatencyMsr, error) {
 }
 
 func (lm *LatencyMsr) Record(lat time.Duration) error {
+	lm.mu.Lock()
+	defer lm.mu.Unlock()
+
 	_, err := fmt.Fprintf(lm.buff, latencyFmt, lat.Nanoseconds())
 	return err
 }
 
 func (lm *LatencyMsr) Flush() error {
+	lm.mu.Lock()
+	defer lm.mu.Unlock()
+
 	if _, err := lm.buff.WriteTo(lm.file); err != nil {
 		return err
 	}
