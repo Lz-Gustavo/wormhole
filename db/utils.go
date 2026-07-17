@@ -37,7 +37,7 @@ func GetPayloadBySizeKb(size PayloadSize) string {
 	return strings.Repeat("0", int(size))
 }
 
-// GetRandKeyUpTo returns a left-padded decimal key in the range [1, limit].
+// GetRandKeyUpTo returns a left-padded decimal key of length KeySizeBytes in the range [1, limit].
 func GetRandKeyUpTo(limit int64) string {
 	key := rand.Int64N(limit) + 1
 	skey := strconv.FormatInt(key, 10)

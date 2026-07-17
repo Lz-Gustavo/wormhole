@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"math/rand/v2"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -33,10 +34,12 @@ func NewWorker(cl db.DatabaseClient, prop flags.Flags) *Worker {
 // and a new one is issued every random thinking time.
 func (w *Worker) Run(ctx context.Context) {
 	w.logger.Debug("worker started...")
+	var wg sync.WaitGroup
 
 	for {
 		select {
 		case <-ctx.Done():
+			wg.Wait()
 			if err := w.client.Close(); err != nil {
 				w.logger.Error("failed closing database client", "err", err)
 			}
@@ -44,7 +47,9 @@ func (w *Worker) Run(ctx context.Context) {
 			return
 
 		default:
-			go w.work(ctx)
+			wg.Go(func() {
+				w.work(ctx)
+			})
 			time.Sleep(w.getRandThinkingTime())
 		}
 	}
@@ -64,6 +69,7 @@ func (w *Worker) work(ctx context.Context) {
 
 	if err := w.client.Write(ctx, key, value); err != nil {
 		w.logger.Error("failed on write request", "err", err)
+		return
 	}
 	w.count.Add(1)
 }

@@ -35,8 +35,11 @@ func NewPool(prop flags.Flags) *Pool {
 
 // Run creates the database clients, starts each worker, and cancels them after ExecTime.
 func (p *Pool) Run(ctx context.Context, newClient db.NewDatabaseFn) {
-	ctx, cancel := context.WithCancel(ctx)
-	p.cancel = cancel
+	ctx, p.cancel = context.WithCancel(ctx)
+	defer func() {
+		p.cancel()
+		p.wg.Wait()
+	}()
 	go p.shutdownAfterDur(p.prop.ExecTime)
 
 	for i := range p.size {
