@@ -21,6 +21,7 @@ type Flags struct {
 	NumClients int
 	ExecTime   time.Duration
 	CmdTimeout time.Duration
+	Verbose    bool
 
 	MaxThinkingTimeMs int
 	KeySpaceSize      int64
@@ -37,6 +38,7 @@ func ParseFlagsFromArgs() Flags {
 	flag.IntVar(&f.NumClients, "clients", defaultClients, "number of concurrent clients (int)")
 	flag.DurationVar(&f.ExecTime, "exec-time", defaultExecTime, "total execution time (duration)")
 	flag.DurationVar(&f.CmdTimeout, "cmd-timeout", defaultCmdTimeout, "command timeout (duration)")
+	flag.BoolVar(&f.Verbose, "v", false, "enable verbose logs (bool)")
 	flag.IntVar(&f.MaxThinkingTimeMs, "max-thinking-time", defaultMaxThinkingTime, "maximum thinking time to wait between requests, in milliseconds (int)")
 	flag.Int64Var(&f.KeySpaceSize, "key-space", defaultKeySpaceSize, "number of different keys (int64)")
 	flag.IntVar(&f.PayloadSize, "payload-size", defaultPayloadSize, "payload size of values, in Bytes (int: 256, 512, 1024, 4096)")
