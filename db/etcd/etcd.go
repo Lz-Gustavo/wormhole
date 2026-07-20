@@ -87,6 +87,7 @@ func (ec *EtcdClient) Close() error {
 	}
 
 	if ec.isStatusMsrEnabled {
+		ec.stopMsr()
 		if err := ec.statusMsr.Flush(); err != nil {
 			return err
 		}
@@ -114,6 +115,10 @@ func (ec *EtcdClient) initializeMsrFromProp() error {
 		}
 		ec.isStatusMsrEnabled = true
 		ec.statusMsr = sm
+
+		ctx, cancel := context.WithCancel(context.Background())
+		ec.stopMsr = cancel
+		go ec.statusMsr.Run(ctx)
 	}
 	return nil
 }
