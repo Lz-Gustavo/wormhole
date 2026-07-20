@@ -56,6 +56,8 @@ func (p *Pool) Run(ctx context.Context, newClient db.NewDatabaseFn) {
 			w.Run(ctx)
 		})
 	}
+
+	p.logger.Info("workers started", "count", p.size)
 	p.wg.Wait()
 }
 

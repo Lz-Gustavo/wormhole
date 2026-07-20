@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"math/rand/v2"
 	"sync"
@@ -68,7 +69,9 @@ func (w *Worker) work(ctx context.Context) {
 	defer cancel()
 
 	if err := w.client.Write(ctx, key, value); err != nil {
-		w.logger.Error("failed on write request", "err", err)
+		if w.shouldLog(err) {
+			w.logger.Error("failed on write request", "err", err)
+		}
 		return
 	}
 	w.count.Add(1)
@@ -77,4 +80,9 @@ func (w *Worker) work(ctx context.Context) {
 func (w *Worker) getRandThinkingTime() time.Duration {
 	ms := rand.IntN(w.prop.MaxThinkingTimeMs)
 	return time.Duration(ms) * time.Millisecond
+}
+
+func (w *Worker) shouldLog(err error) bool {
+	return w.prop.Verbose ||
+		!errors.Is(err, context.Canceled) && !errors.Is(err, context.DeadlineExceeded)
 }

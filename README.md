@@ -13,7 +13,7 @@ Open loop benchmark tool, inspired by [YCSB Is Obsolete, We Need New Benchmarks]
 |clients|10|number of concurrent clients (int)|
 |exec-time|10s|total execution time (duration)|
 |cmd-timeout|1s|command timeout (duration)|
-|v|false|enable verbose logs, only error logs when false (bool)|
+|v|false|enable verbose logs, false also disables the database SDK logger (bool)|
 |max-thinking-time|100|maximum thinking time to wait between requests, in milliseconds (int)|
 |key-space|10000|number of different keys (int64)|
 |payload-size|256|payload size of values, in Bytes (int: 256, 512, 1024, 4096)|

@@ -11,7 +11,7 @@ import (
 
 func main() {
 	f := flags.ParseFlagsFromArgs()
-	level := slog.LevelError
+	level := slog.LevelInfo
 	if f.Verbose {
 		level = slog.LevelDebug
 	}
@@ -21,5 +21,5 @@ func main() {
 
 	p := NewPool(f)
 	p.Run(ctx, etcd.NewEtcdClient)
-	slog.Info("finished", "count", p.Count())
+	slog.Info("finished", "success-req-count", p.Count())
 }

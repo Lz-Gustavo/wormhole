@@ -9,6 +9,7 @@ import (
 	"github.com/Lz-Gustavo/wormhole/flags"
 	"github.com/Lz-Gustavo/wormhole/measure"
 	clientv3 "go.etcd.io/etcd/client/v3"
+	"go.uber.org/zap"
 )
 
 const (
@@ -37,10 +38,16 @@ type EtcdClient struct {
 }
 
 func NewEtcdClient(prop flags.Flags) (db.DatabaseClient, error) {
-	cl, err := clientv3.New(clientv3.Config{
+	cfg := clientv3.Config{
 		Endpoints:   prop.EtcdHosts,
 		DialTimeout: etcdDialTimeout,
-	})
+	}
+
+	if !prop.Verbose {
+		cfg.Logger = zap.NewNop()
+	}
+
+	cl, err := clientv3.New(cfg)
 	if err != nil {
 		return nil, err
 	}
