@@ -8,6 +8,7 @@ import (
 
 	"github.com/Lz-Gustavo/wormhole/db"
 	"github.com/Lz-Gustavo/wormhole/flags"
+	"github.com/Lz-Gustavo/wormhole/measure"
 )
 
 // Pool coordinates workers lifecycle, starts one database client per worker, and gracefully
@@ -17,20 +18,27 @@ type Pool struct {
 	prop    flags.Flags
 	workers []*Worker
 	logger  *slog.Logger
+	meter   *measure.Meter
 
 	wg     *sync.WaitGroup
 	cancel context.CancelFunc
 }
 
 // NewPool builds a Pool with the requested number of clients and a default logger.
-func NewPool(prop flags.Flags) *Pool {
+func NewPool(prop flags.Flags) (*Pool, error) {
+	m, err := measure.NewMeter(prop.LatencyMsrFilename, prop.StatusMsrFilename)
+	if err != nil {
+		return nil, err
+	}
+
 	return &Pool{
 		size:    prop.NumClients,
 		prop:    prop,
 		workers: make([]*Worker, prop.NumClients),
 		logger:  slog.Default(),
+		meter:   m,
 		wg:      &sync.WaitGroup{},
-	}
+	}, nil
 }
 
 // Run creates the database clients, starts each worker, and cancels them after ExecTime.
@@ -43,7 +51,7 @@ func (p *Pool) Run(ctx context.Context, newClient db.NewDatabaseFn) {
 	go p.shutdownAfterDur(p.prop.ExecTime)
 
 	for i := range p.size {
-		cl, err := newClient(p.prop)
+		cl, err := newClient(p.prop, p.meter)
 		if err != nil {
 			p.logger.Error("failed initializing database client", "err", err)
 			return
@@ -76,4 +84,8 @@ func (p *Pool) shutdownAfterDur(dur time.Duration) {
 
 	p.logger.Debug("shutting down workers...")
 	p.cancel()
+
+	if p.meter != nil {
+		p.meter.Close()
+	}
 }

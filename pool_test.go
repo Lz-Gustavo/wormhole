@@ -7,6 +7,7 @@ import (
 
 	"github.com/Lz-Gustavo/wormhole/db"
 	"github.com/Lz-Gustavo/wormhole/flags"
+	"github.com/Lz-Gustavo/wormhole/measure"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -23,8 +24,10 @@ func Test_PoolRun(t *testing.T) {
 		PayloadSize:       int(db.Small),
 	}
 
-	p := NewPool(prop)
-	newClient := func(flags.Flags) (db.DatabaseClient, error) {
+	p, err := NewPool(prop)
+	assert.NoError(t, err)
+
+	newClient := func(flags.Flags, *measure.Meter) (db.DatabaseClient, error) {
 		return &workerTestClient{}, nil
 	}
 

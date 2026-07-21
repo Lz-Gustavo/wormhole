@@ -35,7 +35,12 @@ func main() {
 
 	ctx := context.Background()
 
-	p := NewPool(f)
+	p, err := NewPool(f)
+	if err != nil {
+		slog.Error("failed initializing worker pool", "err", err)
+		os.Exit(1)
+	}
+
 	p.Run(ctx, etcd.NewEtcdClient)
 	slog.Info("finished", "success-req-count", p.Count())
 }

@@ -26,18 +26,13 @@ var (
 )
 
 type EtcdClient struct {
+	meter *measure.Meter
+	prop  flags.Flags
+
 	client *clientv3.Client
-	prop   flags.Flags
-
-	isLatencyMsrEnabled bool
-	latMsr              *measure.LatencyMsr
-
-	isStatusMsrEnabled bool
-	statusMsr          *measure.StatusMsr
-	stopMsr            context.CancelFunc
 }
 
-func NewEtcdClient(prop flags.Flags) (db.DatabaseClient, error) {
+func NewEtcdClient(prop flags.Flags, meter *measure.Meter) (db.DatabaseClient, error) {
 	cfg := clientv3.Config{
 		Endpoints:   prop.EtcdHosts,
 		DialTimeout: etcdDialTimeout,
@@ -52,24 +47,20 @@ func NewEtcdClient(prop flags.Flags) (db.DatabaseClient, error) {
 		return nil, err
 	}
 
-	ec := &EtcdClient{
+	return &EtcdClient{
 		client: cl,
 		prop:   prop,
-	}
-
-	if err := ec.initializeMsrFromProp(); err != nil {
-		return nil, err
-	}
-	return ec, nil
+		meter:  meter,
+	}, nil
 }
 
 func (ec *EtcdClient) Write(ctx context.Context, key, value string) error {
 	var err error
 
-	if ec.isLatencyMsrEnabled && mustMeasureLat() {
+	if ec.isLatencyMsrEnabled() && mustMeasureLat() {
 		start := time.Now()
 		_, err = ec.client.Put(ctx, key, value)
-		if errL := ec.latMsr.Record(time.Since(start)); errL != nil {
+		if errL := ec.meter.LatMsr.Record(time.Since(start)); errL != nil {
 			return errL
 		}
 
@@ -77,57 +68,39 @@ func (ec *EtcdClient) Write(ctx context.Context, key, value string) error {
 		_, err = ec.client.Put(ctx, key, value)
 	}
 
-	if ec.isStatusMsrEnabled {
-		ec.statusMsr.CountStatusFromErr(err)
+	if ec.isStatusMsrEnabled() {
+		ec.meter.StatusMsr.CountStatusFromErr(err)
 	}
 	return err
 }
 
 func (ec *EtcdClient) Close() error {
-	if ec.isLatencyMsrEnabled {
-		if err := ec.latMsr.Flush(); err != nil {
+	if ec.isLatencyMsrEnabled() {
+		if err := ec.meter.LatMsr.Flush(); err != nil {
 			return err
 		}
-		if err := ec.latMsr.Close(); err != nil {
+		if err := ec.meter.LatMsr.Close(); err != nil {
 			return err
 		}
 	}
 
-	if ec.isStatusMsrEnabled {
-		ec.stopMsr()
-		if err := ec.statusMsr.Flush(); err != nil {
+	if ec.isStatusMsrEnabled() {
+		if err := ec.meter.StatusMsr.Flush(); err != nil {
 			return err
 		}
-		if err := ec.statusMsr.Close(); err != nil {
+		if err := ec.meter.StatusMsr.Close(); err != nil {
 			return err
 		}
 	}
 	return ec.client.Close()
 }
 
-func (ec *EtcdClient) initializeMsrFromProp() error {
-	if ec.prop.LatencyMsrFilename != "" {
-		lm, err := measure.NewLatencyMsr(ec.prop.LatencyMsrFilename)
-		if err != nil {
-			return err
-		}
-		ec.isLatencyMsrEnabled = true
-		ec.latMsr = lm
-	}
+func (ec *EtcdClient) isLatencyMsrEnabled() bool {
+	return ec.meter != nil && ec.meter.LatMsr != nil
+}
 
-	if ec.prop.StatusMsrFilename != "" {
-		sm, err := measure.NewStatusMsr(ec.prop.StatusMsrFilename)
-		if err != nil {
-			return err
-		}
-		ec.isStatusMsrEnabled = true
-		ec.statusMsr = sm
-
-		ctx, cancel := context.WithCancel(context.Background())
-		ec.stopMsr = cancel
-		go ec.statusMsr.Run(ctx)
-	}
-	return nil
+func (ec *EtcdClient) isStatusMsrEnabled() bool {
+	return ec.meter != nil && ec.meter.StatusMsr != nil
 }
 
 func mustMeasureLat() bool {

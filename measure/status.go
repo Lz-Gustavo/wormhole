@@ -24,9 +24,10 @@ type StatusMsr struct {
 	countTimeout atomic.Uint32
 	countFail    atomic.Uint32
 
-	mu   sync.Mutex
-	buff *bytes.Buffer
-	file *os.File
+	mu      sync.Mutex
+	buff    *bytes.Buffer
+	file    *os.File
+	stopMsr context.CancelFunc
 }
 
 func NewStatusMsr(filename string) (*StatusMsr, error) {
@@ -57,6 +58,8 @@ func (sm *StatusMsr) CountStatusFromErr(err error) {
 }
 
 func (sm *StatusMsr) Run(ctx context.Context) {
+	ctx, sm.stopMsr = context.WithCancel(ctx)
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -94,5 +97,6 @@ func (sm *StatusMsr) Flush() error {
 
 func (sm *StatusMsr) Close() error {
 	sm.tick.Stop()
+	sm.stopMsr()
 	return sm.file.Close()
 }
