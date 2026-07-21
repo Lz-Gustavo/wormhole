@@ -75,23 +75,6 @@ func (ec *EtcdClient) Write(ctx context.Context, key, value string) error {
 }
 
 func (ec *EtcdClient) Close() error {
-	if ec.isLatencyMsrEnabled() {
-		if err := ec.meter.LatMsr.Flush(); err != nil {
-			return err
-		}
-		if err := ec.meter.LatMsr.Close(); err != nil {
-			return err
-		}
-	}
-
-	if ec.isStatusMsrEnabled() {
-		if err := ec.meter.StatusMsr.Flush(); err != nil {
-			return err
-		}
-		if err := ec.meter.StatusMsr.Close(); err != nil {
-			return err
-		}
-	}
 	return ec.client.Close()
 }
 
